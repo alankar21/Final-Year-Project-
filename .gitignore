@@ -1,0 +1,25 @@
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+.env/
+
+# TensorFlow cache or temp files
+*.h5
+*.ckpt
+*.pb
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+
+# Logs
+*.log
+
+# Model files (do NOT push to GitHub)
+models/
+models/best_student.pth

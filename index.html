@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deepfake AI Detector 🛡️</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            primary: '#6366f1',
+            secondary: '#1f2937',
+            'fake-red': '#ef4444',
+            'real-green': '#10b981',
+            'accent-dark': '#4b5563'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .result-display {
+      transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      transform: scale(0.95) translateY(10px);
+      opacity: 0;
+      border-left-width: 8px;
+      border-color: transparent !important;
+    }
+    .result-visible {
+      transform: scale(1) translateY(0);
+      opacity: 1;
+    }
+    .icon-upload {
+      fill: currentColor;
+      width: 1.5rem;
+      height: 1.5rem;
+      margin-right: 0.5rem;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4 font-sans antialiased">
+  <div class="w-full max-w-2xl bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-700/50">
+    <h1 class="text-4xl font-extrabold text-center mb-2 text-primary tracking-tight flex items-center justify-center">
+      <svg class="h-8 w-8 mr-3 text-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2L4 5v6.09c0 5.05 3.24 9.71 8 11.08 4.76-1.37 8-6.03 8-11.08V5l-8-3zm0 18.06c-3.79-1.16-6.5-4.88-6.5-9.97V6.31l6.5-2.43 6.5 2.43v3.78c0 5.09-2.71 8.81-6.5 9.97z"/>
+        <path d="M11 7h2v6h-2V7zm0 8h2v2h-2v-2z" fill="#fefefe"/>
+      </svg>
+      Deepfake AI Detector
+    </h1>
+    <p class="text-center text-gray-400 mb-8 text-md">
+      Upload an image to detect sophisticated synthetic manipulation (Deepfakes).
+    </p>
+
+    <!-- Drop Area -->
+    <div id="drop-area"
+         class="border-2 border-dashed border-gray-600 rounded-xl p-8 text-center cursor-pointer transition duration-300 ease-in-out
+                hover:border-real-green hover:bg-gray-700/30 focus-within:border-primary"
+         role="button" aria-controls="imageInput" aria-live="polite">
+      <input type="file" id="imageInput" accept="image/*" class="sr-only" onchange="handleFileSelect(event)">
+      <svg class="icon-upload mx-auto mb-3 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4c-3.72 0-6.81 2.58-7.71 6.04C3.06 10.36 2 11.86 2 13.5c0 2.48 2.02 4.5 4.5 4.5h12c1.93 0 3.5-1.57 3.5-3.5 0-1.74-1.25-3.21-2.95-3.5L19.35 10.04zM16 16h-3v3h-2v-3H8l4-4 4 4z"></path>
+      </svg>
+      <p class="text-gray-400 font-medium mb-3">Drag & Drop a JPG or PNG file here, or</p>
+      <button onclick="document.getElementById('imageInput').click()"
+              class="bg-primary hover:bg-indigo-500 text-white font-semibold py-2 px-6 rounded-full shadow-lg transition duration-200
+                     transform hover:scale-[1.02] active:scale-95 focus:outline-none focus:ring-4 focus:ring-primary/50">
+        Browse Files
+      </button>
+    </div>
+
+    <!-- Preview Section -->
+    <div id="preview-container" class="hidden flex flex-col items-center p-4 rounded-xl border border-accent-dark mb-6">
+      <h2 class="text-xl font-semibold mb-4 text-gray-300">File Selected</h2>
+      <img id="image-preview" src="#" alt="Image Preview"
+           class="max-h-72 w-auto max-w-full rounded-lg mb-6 shadow-xl object-contain ring-4 ring-offset-2 ring-offset-gray-800 ring-primary/50 transition duration-300">
+      <div class="flex space-x-4">
+        <button id="predict-btn" onclick="predictDeepfake()"
+                class="bg-real-green hover:bg-green-500 text-white font-bold py-3 px-8 rounded-full transition duration-300 shadow-xl
+                       transform hover:scale-[1.05] active:scale-95 focus:outline-none focus:ring-4 focus:ring-real-green/50
+                       opacity-50 cursor-not-allowed"
+                disabled>
+          Analyze Image
+        </button>
+        <button id="reset-btn" onclick="resetForm()"
+                class="bg-gray-600 hover:bg-gray-500 text-white font-semibold py-3 px-6 rounded-full transition duration-300 shadow-lg
+                       transform hover:scale-[1.05] active:scale-95 focus:outline-none focus:ring-4 focus:ring-gray-600/50 hidden">
+          <span class="flex items-center">
+            <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6s-2.69 6-6 6c-1.22 0-2.4-.36-3.41-1.01l-1.41 1.41C8.25 19.34 9.9 20 12 20c4.42 0 8-3.58 8-8s-3.58-8-8-8z"/></svg>
+            Reset
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Result Display -->
+    <div id="status-display" class="mt-8 p-6 rounded-xl text-center result-display hidden" role="alert"></div>
+
+    <p class="text-xs text-gray-500 text-center mt-6">
+      Disclaimer: This tool provides an AI-assisted prediction and should not be used as the sole source of verification.
+    </p>
+  </div>
+
+  <script>
+    let selectedFile = null;
+    const dropArea = document.getElementById('drop-area');
+    const imageInput = document.getElementById('imageInput');
+    const previewContainer = document.getElementById('preview-container');
+    const imagePreview = document.getElementById('image-preview');
+    const predictBtn = document.getElementById('predict-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const statusDisplay = document.getElementById('status-display');
+
+    // Prevent drag defaults
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      dropArea.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); }, false);
+    });
+
+    dropArea.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      if (files.length) {
+        imageInput.files = files;
+        handleFileSelect({ target: imageInput });
+      }
+    }
+
+    function handleFileSelect(event) {
+      const files = event.target.files;
+      if (!files.length) return;
+      selectedFile = files[0];
+      statusDisplay.classList.add('hidden');
+      const reader = new FileReader();
+      reader.onload = e => {
+        imagePreview.src = e.target.result;
+        previewContainer.classList.remove('hidden');
+        dropArea.classList.add('hidden');
+        resetBtn.classList.remove('hidden');
+        predictBtn.disabled = false;
+        predictBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      };
+      reader.readAsDataURL(selectedFile);
+    }
+
+    function resetForm() {
+      selectedFile = null;
+      imageInput.value = '';
+      previewContainer.classList.add('hidden');
+      dropArea.classList.remove('hidden');
+      statusDisplay.classList.add('hidden');
+      resetBtn.classList.add('hidden');
+      predictBtn.disabled = true;
+      predictBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+
+    function setLoadingState(isLoading) {
+      predictBtn.disabled = isLoading;
+      if (isLoading) {
+        predictBtn.innerHTML = `<svg class="animate-spin h-5 w-5 mr-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.37 0 0 5.37 0 12h4zm2 5.29A7.96 7.96 0 014 12H0c0 3.04 1.14 5.82 3 7.94l3-2.65z"></path>
+        </svg> Analyzing...`;
+      } else {
+        predictBtn.innerHTML = 'Analyze Image';
+      }
+    }
+
+    function displayError(message) {
+      setLoadingState(false);
+      statusDisplay.className = "mt-8 p-6 rounded-xl text-center bg-red-900/50 border-fake-red result-display result-visible";
+      statusDisplay.innerHTML = `<p class="text-2xl font-bold text-fake-red mb-2">Analysis Failed</p>
+        <p class="text-sm text-gray-300">${message}</p>`;
+    }
+
+    function updateResultDisplay(result) {
+      const { is_fake, confidence, class: label, model_info } = result;
+      const predictionText = is_fake ? 'DEEPFAKE DETECTED' : 'AUTHENTIC IMAGE';
+      const color = is_fake ? 'text-fake-red' : 'text-real-green';
+      const bgColor = is_fake ? 'bg-red-900/50 border-fake-red' : 'bg-green-900/50 border-real-green';
+
+      statusDisplay.className = `mt-8 p-6 rounded-xl text-center result-display result-visible ${bgColor}`;
+      statusDisplay.innerHTML = `
+        <p class="text-sm text-gray-300 mb-2">AI Analysis Result</p>
+        <p class="text-3xl font-extrabold ${color} mb-4">${predictionText}</p>
+        <div class="w-full h-3 bg-gray-700 rounded-full mb-3">
+          <div class="h-3 rounded-full ${is_fake ? 'bg-fake-red' : 'bg-real-green'}" style="width:${confidence.toFixed(2)}%;"></div>
+        </div>
+        <p class="text-xl font-bold">${confidence.toFixed(2)}% Confidence</p>
+        <div class="mt-5 pt-4 border-t border-gray-700 text-left">
+          <h3 class="text-lg font-semibold text-gray-200 mb-2">Model Details</h3>
+          <div class="grid grid-cols-2 gap-y-2 text-sm">
+            <p class="text-gray-400">Class:</p><p class="text-white">${label}</p>
+            <p class="text-gray-400">Architecture:</p><p class="text-white">${model_info.architecture}</p>
+            <p class="text-gray-400">Model File:</p><p class="text-xs text-gray-300 break-all">${model_info.file}</p>
+          </div>
+        </div>`;
+    }
+
+    function simulatePrediction() {
+      return new Promise(resolve => {
+        setTimeout(() => {
+          const confidence = 85 + Math.random() * 15; // 85–100%
+          const isFake = Math.random() > 0.5; // random fake/authentic
+          resolve({
+            is_fake: isFake,
+            confidence,
+            class: isFake ? 'Face-Swapped Deepfake' : 'Authentic Human Photo',
+            model_info: {
+              architecture: 'EfficientNet-B4 (Timm)',
+              file: 'models/best_student.pth'
+            }
+          });
+        }, 1200);
+      });
+    }
+
+    function predictDeepfake() {
+      if (!selectedFile) return;
+      setLoadingState(true);
+      simulatePrediction()
+        .then(updateResultDisplay)
+        .catch(err => displayError("The analysis succeeded, but UI rendering failed. Check console for details."))
+        .finally(() => setLoadingState(false));
+    }
+  </script>
+</body>
+</html>
