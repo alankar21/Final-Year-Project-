@@ -20,6 +20,6 @@ Thumbs.db
 # Logs
 *.log
 
-# Model files (do NOT push to GitHub)
-models/
-models/best_student.pth
+# # Model files (do NOT push to GitHub)
+# models/
+# models/best_student.pth
