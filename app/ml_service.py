@@ -11,15 +11,24 @@ from typing import Dict, Any
 import gdown  # ✅ for downloading model from Google Drive
 
 # ---------------------- DOWNLOAD MODEL FROM GOOGLE DRIVE ----------------------
-os.makedirs("models", exist_ok=True)
-model_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "models", "best_student.pth")
-gdrive_url = "https://drive.google.com/uc?export=download&id=1XOkUkNM6JIDFA-ACn8KfNjXWJ2xPhFba"
+# Ensure models directory exists relative to this file
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_DIR = os.path.join(BASE_DIR, "..", "models")
+os.makedirs(MODEL_DIR, exist_ok=True)
 
-if not os.path.exists(model_path):
-    print("⬇️ Downloading model from Google Drive...")
-    gdown.download(gdrive_url, model_path, quiet=False)
-else:
-    print("✅ Model file already exists. Skipping download.")
+model_path = os.path.join(MODEL_DIR, "best_student.pth")
+gdrive_url = "https://drive.google.com/uc?export=download&id=1c22jmqG_yOLwNyVVoQQB5Z2O5nF7YXMp"
+
+
+try:
+    if not os.path.exists(model_path):
+        print("⬇️ Downloading model from Google Drive...")
+        gdown.download(gdrive_url, model_path, quiet=False)
+        print("✅ Model downloaded successfully!")
+    else:
+        print("✅ Model file already exists. Skipping download.")
+except Exception as e:
+    print(f"❌ ERROR: Failed to download model from Google Drive: {e}")
 
 # ---------------------- GLOBALS ----------------------
 model = None
@@ -59,7 +68,7 @@ def load_student_model():
     if model is None:
         print("--- Loading DeiT Student Model ---")
         try:
-            model = VisionTransformerStudent()
+            model_instance = VisionTransformerStudent()
             # Load weights onto CPU
             state_dict = torch.load(model_path, map_location=torch.device('cpu'))
 
@@ -69,8 +78,9 @@ def load_student_model():
             elif 'model' in state_dict:
                 state_dict = state_dict['model']
 
-            model.load_state_dict(state_dict, strict=False)
-            model.eval()
+            model_instance.load_state_dict(state_dict, strict=False)
+            model_instance.eval()
+            model = model_instance
             print("--- Model Loaded Successfully! ---")
         except FileNotFoundError:
             print(f"❌ ERROR: Model file not found at: {model_path}")
