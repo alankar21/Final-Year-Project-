@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.ml_service import load_student_model, predict_deepfake
 from fastapi.responses import HTMLResponse
 import os
+from fastapi.staticfiles import StaticFiles
 
 # --- FastAPI App Initialization ---
 app = FastAPI(title="Deepfake Detection API")
@@ -34,7 +35,7 @@ async def startup_event():
     """Load the ML model when the application starts."""
     print("Application Startup: Starting model loading...")
     try:
-        # Calls the function from the mock ml_service.py
+        # Calls the function from the ml_service.py
         load_student_model()
         print("Application Startup: Model is ready for inference.")
     except Exception as e:
@@ -65,14 +66,14 @@ async def predict_deepfake_endpoint(file: UploadFile = File(...)):
         print(f"Inference error: {e}")
         # In a real app, log the error details securely.
         raise HTTPException(status_code=500, detail="Internal server error during prediction.")
-    
-    from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
-import os
+
 
 # --- Serve index.html ---
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
+    """
+    Serves the index.html frontend file.
+    """
     index_path = os.path.join(os.path.dirname(__file__), "../index.html")
     try:
         with open(index_path, "r", encoding="utf-8") as f:
@@ -81,6 +82,7 @@ async def read_root():
         return "<h1>index.html not found</h1>"
 
 
+# --- Main Entry Point ---
 if __name__ == "__main__":
     # To run this from the command line, you would typically use:
     # uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
